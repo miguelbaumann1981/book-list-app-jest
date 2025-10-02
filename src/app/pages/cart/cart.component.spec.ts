@@ -40,6 +40,7 @@ describe('CartComponent', () => {
 
     let component: CartComponent;
     let fixture: ComponentFixture<CartComponent>;
+    let service: BookService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -63,7 +64,15 @@ describe('CartComponent', () => {
         fixture = TestBed.createComponent(CartComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
+        service = fixture.debugElement.injector.get(BookService);
+        jest.spyOn(service, 'getBooksFromCart').mockImplementation(() => listBook);
     });
+
+    afterEach(() => {
+        fixture.destroy();
+        jest.resetAllMocks();
+    });
+    
 
     it('should create',() => {
         expect(component).toBeTruthy();
@@ -72,8 +81,55 @@ describe('CartComponent', () => {
     it ('getTotalPrice returns an amount', () => {
         const totalPrice = component.getTotalPrice(listBook);
         expect(totalPrice).toBeGreaterThan(0);
-        expect(totalPrice).not.toBe(0);
-        expect(totalPrice).not.toBeNull();
+        // expect(totalPrice).not.toBe(0);
+        // expect(totalPrice).not.toBeNull();
+    });
+
+    it ('onInputNumberChange increments correctly', () => {
+        const action = 'plus';
+        const book: Book = listBook[0];
+
+        // const service1 = (component as any)._bookService;
+        // const service2 = component['_bookService'];
+
+        const spy1 = jest.spyOn(service, 'updateAmountBook').mockImplementation( () => null );
+        const spy2 = jest.spyOn(component, 'getTotalPrice').mockImplementation( () => null);
+
+        expect(book.amount).toBe(2);
+        component.onInputNumberChange(action, book);
+        expect(book.amount).toBe(3);
+        expect(spy1).toHaveBeenCalled();
+        expect(spy2).toHaveBeenCalledTimes(1);
+    });
+
+    it('onInputNumberChange decrements correctly', () => {
+        const action = 'minus';
+        const book: Book = listBook[0];
+
+        const spy1 = jest.spyOn(service, 'updateAmountBook').mockImplementation( () => null );
+        const spy2 = jest.spyOn(component, 'getTotalPrice').mockImplementation( () => null);
+
+        component.onInputNumberChange(action, book);
+        expect(spy1).toHaveBeenCalled();
+        expect(spy2).toHaveBeenCalledTimes(1);
+    });
+
+    it('onClearBooks works fine', () => {
+        const spy1 = jest.spyOn(service, 'removeBooksFromCart').mockImplementation( () => null );
+        const spy2 = jest.spyOn(component as any, '_clearListCartBook');
+        component.listCartBook = listBook;
+        component.onClearBooks();
+        expect(component.listCartBook.length).toBe(0);
+        expect(spy1).toHaveBeenCalled();
+        expect(spy2).toHaveBeenCalledTimes(1);
+    });
+
+    it('_clearListCartBook works fine', () => {
+        const spy1 = jest.spyOn(service, 'removeBooksFromCart').mockImplementation( () => null );
+        component.listCartBook = listBook;
+        component['_clearListCartBook']();
+        expect(component.listCartBook.length).toBe(0);
+        expect(spy1).toHaveBeenCalled();
     });
     
 
