@@ -1,9 +1,12 @@
 import { CartComponent } from './cart.component';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BookService } from '../../services/book.service';
-import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject, NO_ERRORS_SCHEMA } from '@angular/core';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Book } from 'src/app/models/book.model';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { of } from 'rxjs';
+import { By } from '@angular/platform-browser';
 
 const listBook: Book[] = [
   {
@@ -35,6 +38,14 @@ const listBook: Book[] = [
   },
 ];
 
+const matDialogMock = {
+    open() {
+        return {
+            afterClosed: () => { of(true) }
+        };
+    }
+}
+
 
 describe('CartComponent', () => {
 
@@ -51,7 +62,8 @@ describe('CartComponent', () => {
                 CartComponent
             ],
             providers: [
-                BookService
+                BookService,
+                { provide: MatDialog, useValue: matDialogMock }
             ],
             schemas: [
                 CUSTOM_ELEMENTS_SCHEMA,
@@ -77,6 +89,7 @@ describe('CartComponent', () => {
     it('should create',() => {
         expect(component).toBeTruthy();
     });
+
     
     it ('getTotalPrice returns an amount', () => {
         const totalPrice = component.getTotalPrice(listBook);
@@ -124,6 +137,23 @@ describe('CartComponent', () => {
         expect(spy2).toHaveBeenCalledTimes(1);
     });
 
+    it('onClearBooks2 works fine', () => {
+        const spy1 = jest.spyOn(service, 'removeBooksFromCart').mockImplementation( () => null );
+        const spy2 = jest.spyOn(component as any, '_clearListCartBook');
+        const spy3 = jest.spyOn(matDialogMock, 'open').mockImplementation( () => {
+            return {
+                afterClosed: () => of(true)
+            }
+        } );
+        component.listCartBook = listBook;
+        component.onClearBooks2();
+
+        expect(component.listCartBook.length).toBe(0);
+        expect(spy1).toHaveBeenCalled();
+        expect(spy2).toHaveBeenCalledTimes(1);
+        expect(spy3).toHaveBeenCalled();
+    });
+
     it('_clearListCartBook works fine', () => {
         const spy1 = jest.spyOn(service, 'removeBooksFromCart').mockImplementation( () => null );
         component.listCartBook = listBook;
@@ -132,7 +162,12 @@ describe('CartComponent', () => {
         expect(spy1).toHaveBeenCalled();
     });
     
-
+    it('The title "The cart is empty" is shown when the cart has no books', () => {
+        component.listCartBook = [];
+        fixture.detectChanges();
+        const debugElement: DebugElement = fixture.debugElement.query(By.css('#titleCartEmpty'));
+        expect(debugElement).toBeTruthy();
+    });
 
 
 });
